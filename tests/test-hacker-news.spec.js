@@ -45,6 +45,6 @@ test('first 100 articles are sorted by timestamp', async ({ page }) => {
 
   // Finally, we assert that the dates are sorted in descending order.
   for (let i = 1; i < dates.length; ++i) {
-    expect(dates[i - 1].getTime(), `article #${i}'s timestamp is not ≥ article #${i + 1}'s`).toBeGreaterThanOrEqual(dates[i].getTime());
+    expect(dates[i - 1].getTime(), `Article #${i}'s timestamp (${dates[i - 1].toISOString()}) is newer than article #${i + 1}'s (${dates[i].toISOString()}).`).toBeGreaterThanOrEqual(dates[i].getTime());
   }
 });
