@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import dotenv from 'dotenv';
+dotenv.config();
 
 test('first 100 articles are sorted from newest to oldest', async ({ page }) => {
   // Navigate to the Hacker News "newest" page.
@@ -46,4 +48,32 @@ test('first 100 articles are sorted from newest to oldest', async ({ page }) => 
   for (let i = 1; i < timestamps.length; ++i) {
     expect(timestamps[i - 1].getTime(), `Article #${i}'s timestamp (${timestamps[i - 1].toISOString()}) is newer than article #${i + 1}'s (${timestamps[i].toISOString()}).`).toBeGreaterThanOrEqual(timestamps[i].getTime());
   }
+});
+
+test('logging in and out works as intended', async ({ page }) => {
+  // Navigate to the Hacker News homepage.
+  await page.goto('https://news.ycombinator.com/news');
+
+  // Get the username and password from the .env file.
+  const username = process.env.HACKER_NEWS_USERNAME;
+  const password = process.env.HACKER_NEWS_PASSWORD;
+
+  // Click the "login" link to go to the login page.
+  await page.getByRole('link', { name: 'login' }).click();
+
+  // Fill in the login form with the username and password.
+  await page.locator('form').filter({ hasText: 'username:password: login' }).locator('input[name="acct"]').click();
+  await page.locator('form').filter({ hasText: 'username:password: login' }).locator('input[name="acct"]').fill(`${username}`);
+  await page.locator('form').filter({ hasText: 'username:password: login' }).locator('input[name="pw"]').click();
+  await page.locator('form').filter({ hasText: 'username:password: login' }).locator('input[name="pw"]').fill(`${password}`);
+
+  // Submit the login form.
+  await page.getByRole('button', { name: 'login' }).click();
+
+  // After logging in, we should see the user's username, their karma count, and a logout link.
+  await expect(page.getByRole('cell', { name: new RegExp(`^${username} \\(\\d+\\) \\| logout$`), exact: true })).toBeVisible();
+
+  // After clicking the logout link, the page should revert to showing the login link without the username or karma count.
+  await page.getByRole('link', { name: 'logout' }).click();
+  await expect(page.getByRole('cell', { name: 'login', exact: true })).toBeVisible();
 });
