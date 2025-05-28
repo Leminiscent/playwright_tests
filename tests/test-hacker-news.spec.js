@@ -1,21 +1,20 @@
 import { test, expect } from '@playwright/test';
 
-test('first 100 articles are sorted by timestamp', async ({ page }) => {
+test('first 100 articles are sorted from newest to oldest', async ({ page }) => {
   // Navigate to the Hacker News "newest" page.
   await page.goto('https://news.ycombinator.com/newest');
 
-  // We will collect the dates of the first 100 articles.
-  // The dates will be stored in an array, which we will later use to check if they are sorted.
+  // We will collect the timestamps of the first 100 articles.
   const TARGET = 100;
-  const dates = [];
+  const timestamps = [];
 
-  while (dates.length < TARGET) {
+  while (timestamps.length < TARGET) {
     // Locate all the spans with the class "age" on the current page.
     // These spans contain the article timestamps in their title attributes.
     const ageSpans = page.locator('span.age');
     const count = await ageSpans.count();
 
-    for (let i = 0; i < count && dates.length < TARGET; ++i) {
+    for (let i = 0; i < count && timestamps.length < TARGET; ++i) {
       const title = await ageSpans.nth(i).getAttribute('title');
       if (!title) throw new Error('title attribute not found on span');
 
@@ -25,14 +24,14 @@ test('first 100 articles are sorted by timestamp', async ({ page }) => {
 
       // Because the titles are in a format that's incompatible with the Date constructor, we need to extract either the ISO string or the Unix timestamp.
       // Also, because JavaScript expects time values in milliseconds for its Date objects, we would have to convert the Unix timestamp from seconds to milliseconds.
-      // So, for simplicity, we'll just extract the ISO strings and create Date objects from them.
+      // So, for simplicity, we'll just extract the ISO strings and create Date objects from those.
       const [isoString] = title.split(' ');
-      dates.push(new Date(isoString));
+      timestamps.push(new Date(isoString));
     }
 
-    // If we haven't collected enough dates, we click the "More" link to load more articles.
-    // We also wait for the network idle state to ensure that the new articles are fully loaded before proceeding.
-    if (dates.length < TARGET) {
+    // If we haven't collected enough timestamps, we click the "More" link to load more articles.
+    // We wait for the network idle state to guarantee that the new articles are fully loaded before proceeding.
+    if (timestamps.length < TARGET) {
       await Promise.all([
         page.click('a.morelink'),
         page.waitForLoadState('networkidle')
@@ -40,11 +39,11 @@ test('first 100 articles are sorted by timestamp', async ({ page }) => {
     }
   }
 
-  // At this point, we assert that we have collected exactly 100 dates.
-  expect(dates.length).toBe(TARGET);
+  // At this point, we assert that we have collected exactly 100 timestamps.
+  expect(timestamps.length).toBe(TARGET);
 
-  // Finally, we assert that the dates are sorted in descending order.
-  for (let i = 1; i < dates.length; ++i) {
-    expect(dates[i - 1].getTime(), `Article #${i}'s timestamp (${dates[i - 1].toISOString()}) is newer than article #${i + 1}'s (${dates[i].toISOString()}).`).toBeGreaterThanOrEqual(dates[i].getTime());
+  // Finally, we assert that the timestamps are sorted from newest to oldest.
+  for (let i = 1; i < timestamps.length; ++i) {
+    expect(timestamps[i - 1].getTime(), `Article #${i}'s timestamp (${timestamps[i - 1].toISOString()}) is newer than article #${i + 1}'s (${timestamps[i].toISOString()}).`).toBeGreaterThanOrEqual(timestamps[i].getTime());
   }
 });
