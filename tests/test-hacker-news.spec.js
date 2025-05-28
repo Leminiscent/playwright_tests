@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test';
-import dotenv from 'dotenv';
-dotenv.config();
 
 test('first 100 articles are sorted from newest to oldest', async ({ page }) => {
   // Navigate to the Hacker News "newest" page.
